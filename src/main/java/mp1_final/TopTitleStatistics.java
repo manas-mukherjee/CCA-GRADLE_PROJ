@@ -222,7 +222,7 @@ public class TopTitleStatistics extends Configured implements Tool {
 				
 				sum += item.first;
 				
-				if(item.first < min){
+				if(item.first <= min){
 					min = item.first;
 				}
 				if(item.first > max){
@@ -241,7 +241,7 @@ public class TopTitleStatistics extends Configured implements Tool {
 				varSqrSum =  (int) (varSqrSum + Math.pow(diff,2));
 			}
 			
-			var = varSqrSum/(countToWordMap.size()-1);
+			var = varSqrSum/(countToWordMap.size());
 			
             context.write(new Text("Mean"), new IntWritable(mean));
             context.write(new Text("Sum"), new IntWritable(sum));

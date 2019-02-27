@@ -147,7 +147,7 @@ public class PopularityLeague extends Configured implements Tool {
 
     public static class TopLinksMap extends Mapper<Text, Text, NullWritable, IntArrayWritable> {
         Integer N;
-        private TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> ();
+        private TreeSet <TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <TopPopLinksPair< Integer, Integer >> ();
 		private List<String> leagues = null;
         
         @Override
@@ -167,7 +167,7 @@ public class PopularityLeague extends Configured implements Tool {
 			Integer keyValue = Integer.parseInt(key.toString());
 			
 			if(this.leagues.contains(key.toString())){
-				countToWordMap.add(new mp1_completed.TopPopLinksPair< Integer, Integer >(sumValue, keyValue));
+				countToWordMap.add(new TopPopLinksPair< Integer, Integer >(sumValue, keyValue));
 			}
 		}
 
@@ -175,7 +175,7 @@ public class PopularityLeague extends Configured implements Tool {
 		protected void cleanup(
 				Context context)
 				throws IOException, InterruptedException {
-			for (mp1_completed.TopPopLinksPair< Integer, Integer > item: countToWordMap) {
+			for (TopPopLinksPair< Integer, Integer > item: countToWordMap) {
 				Integer[] integers = {
 					item.second,
 					item.first
@@ -188,7 +188,7 @@ public class PopularityLeague extends Configured implements Tool {
 
     public static class TopLinksReduce extends Reducer<NullWritable, IntArrayWritable, IntWritable, IntWritable> {
         Integer N;
-        private TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> ();
+        private TreeSet <TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <TopPopLinksPair< Integer, Integer >> ();
 		private List<String> leagues = null;
 		
         @Override
@@ -212,7 +212,7 @@ public class PopularityLeague extends Configured implements Tool {
 				Integer word = Integer.parseInt(strings[0]);
 				Integer count = Integer.parseInt(strings[1]);
 				
-				countToWordMap.add(new mp1_completed.TopPopLinksPair< Integer, Integer >(count, word));
+				countToWordMap.add(new TopPopLinksPair< Integer, Integer >(count, word));
 			}
 			int rank = 0;
 			int lastLinkValue = 0;
@@ -229,7 +229,7 @@ public class PopularityLeague extends Configured implements Tool {
 			Map<Integer, Integer> linkToCountMap = new HashMap<Integer,Integer>();
 			int lastRank =0, lastValue =0;
 			
-			for (mp1_completed.TopPopLinksPair< Integer, Integer > item: countToWordMap) {
+			for (TopPopLinksPair< Integer, Integer > item: countToWordMap) {
 				IntWritable word = new IntWritable(item.second);
 				IntWritable value = new IntWritable(item.first);
 				
@@ -250,7 +250,7 @@ public class PopularityLeague extends Configured implements Tool {
 
 class TopPopLinksPair<A extends Comparable<? super A>,
         B extends Comparable<? super B>>
-        implements Comparable<mp1_completed.TopPopLinksPair<A, B>> {
+        implements Comparable<TopPopLinksPair<A, B>> {
 
     public final A first;
     public final B second;
@@ -262,12 +262,12 @@ class TopPopLinksPair<A extends Comparable<? super A>,
 
     public static <A extends Comparable<? super A>,
             B extends Comparable<? super B>>
-    mp1_completed.TopPopLinksPair<A, B> of(A first, B second) {
-        return new mp1_completed.TopPopLinksPair<A, B>(first, second);
+    TopPopLinksPair<A, B> of(A first, B second) {
+        return new TopPopLinksPair<A, B>(first, second);
     }
 
     @Override
-    public int compareTo(mp1_completed.TopPopLinksPair<A, B> o) {
+    public int compareTo(TopPopLinksPair<A, B> o) {
         int cmp = o == null ? 1 : (this.first).compareTo(o.first);
         return cmp == 0 ? (this.second).compareTo(o.second) : cmp;
     }
@@ -283,12 +283,12 @@ class TopPopLinksPair<A extends Comparable<? super A>,
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof mp1_completed.TopPopLinksPair))
+        if (!(obj instanceof TopPopLinksPair))
             return false;
         if (this == obj)
             return true;
-        return equal(first, ((mp1_completed.TopPopLinksPair<?, ?>) obj).first)
-                && equal(second, ((mp1_completed.TopPopLinksPair<?, ?>) obj).second);
+        return equal(first, ((TopPopLinksPair<?, ?>) obj).first)
+                && equal(second, ((TopPopLinksPair<?, ?>) obj).second);
     }
 
     private boolean equal(Object o1, Object o2) {
