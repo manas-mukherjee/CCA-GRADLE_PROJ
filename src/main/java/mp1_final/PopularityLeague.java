@@ -2,6 +2,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ArrayWritable;
@@ -18,14 +19,15 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.lang.Integer;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
+import java.io.InputStreamReader;
+import java.util.*;
 
-public class TopPopularLinks extends Configured implements Tool {
+public class PopularityLeague extends Configured implements Tool {
+
     public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new TopPopularLinks(), args);
+        int res = ToolRunner.run(new Configuration(), new PopularityLeague(), args);
         System.exit(res);
     }
 
@@ -47,7 +49,7 @@ public class TopPopularLinks extends Configured implements Tool {
         FileInputFormat.setInputPaths(jobA, new Path(args[0]));
         FileOutputFormat.setOutputPath(jobA, tmpPath);
 
-        jobA.setJarByClass(TopPopularLinks.class);
+        jobA.setJarByClass(PopularityLeague.class);
         jobA.waitForCompletion(true);
 
         Job jobB = Job.getInstance(conf, "Top Titles Statistics");
@@ -67,11 +69,11 @@ public class TopPopularLinks extends Configured implements Tool {
         jobB.setInputFormatClass(KeyValueTextInputFormat.class);
         jobB.setOutputFormatClass(TextOutputFormat.class);
 
-        jobB.setJarByClass(TopPopularLinks.class);
+        jobB.setJarByClass(PopularityLeague.class);
         return jobB.waitForCompletion(true) ? 0 : 1;
     }
 
-     public static class IntArrayWritable extends ArrayWritable {
+    public static class IntArrayWritable extends ArrayWritable {
         public IntArrayWritable() {
             super(IntWritable.class);
         }
@@ -86,11 +88,30 @@ public class TopPopularLinks extends Configured implements Tool {
         }
     }
 
+    public static String readHDFSFile(String path, Configuration conf) throws IOException{
+        Path pt=new Path(path);
+        FileSystem fs = FileSystem.get(pt.toUri(), conf);
+        FSDataInputStream file = fs.open(pt);
+        BufferedReader buffIn=new BufferedReader(new InputStreamReader(file));
+
+        StringBuilder everything = new StringBuilder();
+        String line;
+        while( (line = buffIn.readLine()) != null) {
+            everything.append(line);
+            everything.append("\n");
+        }
+        return everything.toString();
+    }
+    
     public static class LinkCountMap extends Mapper<Object, Text, IntWritable, IntWritable> {
+    	List<String> leagues;
         // TODO
     	@Override
         protected void setup(Context context) throws IOException,InterruptedException {
-    		
+    		Configuration conf = context.getConfiguration();
+
+            String stopWordsPath = conf.get("league");
+    		this.leagues = Arrays.asList(readHDFSFile(stopWordsPath, conf).split("\n"));
     	}
 
 		@Override
@@ -126,12 +147,16 @@ public class TopPopularLinks extends Configured implements Tool {
 
     public static class TopLinksMap extends Mapper<Text, Text, NullWritable, IntArrayWritable> {
         Integer N;
-        private TreeSet <TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <TopPopLinksPair< Integer, Integer >> ();
+        private TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> ();
+		private List<String> leagues = null;
         
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
             Configuration conf = context.getConfiguration();
             this.N = conf.getInt("N", 10);
+            
+            String stopWordsPath = conf.get("league");
+    		this.leagues   = Arrays.asList(readHDFSFile(stopWordsPath, conf).split("\n"));
         }
         // TODO
 
@@ -140,9 +165,9 @@ public class TopPopularLinks extends Configured implements Tool {
 				throws IOException, InterruptedException {
 			Integer sumValue = Integer.parseInt(value.toString());
 			Integer keyValue = Integer.parseInt(key.toString());
-			countToWordMap.add(new TopPopLinksPair< Integer, Integer >(sumValue, keyValue));
-			if (countToWordMap.size() > this.N) {
-				countToWordMap.remove(countToWordMap.first());
+			
+			if(this.leagues.contains(key.toString())){
+				countToWordMap.add(new mp1_completed.TopPopLinksPair< Integer, Integer >(sumValue, keyValue));
 			}
 		}
 
@@ -150,7 +175,7 @@ public class TopPopularLinks extends Configured implements Tool {
 		protected void cleanup(
 				Context context)
 				throws IOException, InterruptedException {
-			for (TopPopLinksPair< Integer, Integer > item: countToWordMap) {
+			for (mp1_completed.TopPopLinksPair< Integer, Integer > item: countToWordMap) {
 				Integer[] integers = {
 					item.second,
 					item.first
@@ -163,12 +188,16 @@ public class TopPopularLinks extends Configured implements Tool {
 
     public static class TopLinksReduce extends Reducer<NullWritable, IntArrayWritable, IntWritable, IntWritable> {
         Integer N;
-        private TreeSet <TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <TopPopLinksPair< Integer, Integer >> ();
+        private TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> countToWordMap = new TreeSet <mp1_completed.TopPopLinksPair< Integer, Integer >> ();
+		private List<String> leagues = null;
 		
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
             Configuration conf = context.getConfiguration();
-            this.N = conf.getInt("N", 10);
+
+            String stopWordsPath = conf.get("league");
+    		this.leagues  = Arrays.asList(readHDFSFile(stopWordsPath, conf).split("\n"));
+    		System.out.println("Leagues - " + this.leagues);
         }
         // TODO
 
@@ -178,30 +207,50 @@ public class TopPopularLinks extends Configured implements Tool {
 				throws IOException, InterruptedException {
 			
 			for (IntArrayWritable val: values) {
-//				Integer[] pair = (Integer[]) val.toArray();
 				String[] strings = val.toStrings();
 				
 				Integer word = Integer.parseInt(strings[0]);
 				Integer count = Integer.parseInt(strings[1]);
 				
-				countToWordMap.add(new TopPopLinksPair< Integer, Integer >(count, word));
-				if (countToWordMap.size() > N) {
-					countToWordMap.remove(countToWordMap.first());
-				}
+				countToWordMap.add(new mp1_completed.TopPopLinksPair< Integer, Integer >(count, word));
 			}
-			for (TopPopLinksPair< Integer, Integer > item: countToWordMap) {
+			int rank = 0;
+			int lastLinkValue = 0;
+/*			
+			3		2
+			2370447	282
+			5300058	610
+			81615	615
+			3078798	624
+			3294332	624
+			1804986	643
+			
+*/
+			Map<Integer, Integer> linkToCountMap = new HashMap<Integer,Integer>();
+			int lastRank =0, lastValue =0;
+			
+			for (mp1_completed.TopPopLinksPair< Integer, Integer > item: countToWordMap) {
 				IntWritable word = new IntWritable(item.second);
 				IntWritable value = new IntWritable(item.first);
-				context.write(word, value);
+				
+				if(value.get()==lastValue){
+					context.write(word, new IntWritable(lastRank));
+				}else{
+					context.write(word, new IntWritable(rank));
+				}
+				
+				lastRank = rank;
+				lastValue = value.get();
+				
+				rank++;
 			}
 		}
     }
 }
 
-
 class TopPopLinksPair<A extends Comparable<? super A>,
         B extends Comparable<? super B>>
-        implements Comparable<TopPopLinksPair<A, B>> {
+        implements Comparable<mp1_completed.TopPopLinksPair<A, B>> {
 
     public final A first;
     public final B second;
@@ -213,12 +262,12 @@ class TopPopLinksPair<A extends Comparable<? super A>,
 
     public static <A extends Comparable<? super A>,
             B extends Comparable<? super B>>
-    TopPopLinksPair<A, B> of(A first, B second) {
-        return new TopPopLinksPair<A, B>(first, second);
+    mp1_completed.TopPopLinksPair<A, B> of(A first, B second) {
+        return new mp1_completed.TopPopLinksPair<A, B>(first, second);
     }
 
     @Override
-    public int compareTo(TopPopLinksPair<A, B> o) {
+    public int compareTo(mp1_completed.TopPopLinksPair<A, B> o) {
         int cmp = o == null ? 1 : (this.first).compareTo(o.first);
         return cmp == 0 ? (this.second).compareTo(o.second) : cmp;
     }
@@ -234,12 +283,12 @@ class TopPopLinksPair<A extends Comparable<? super A>,
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof TopPopLinksPair))
+        if (!(obj instanceof mp1_completed.TopPopLinksPair))
             return false;
         if (this == obj)
             return true;
-        return equal(first, ((TopPopLinksPair<?, ?>) obj).first)
-                && equal(second, ((TopPopLinksPair<?, ?>) obj).second);
+        return equal(first, ((mp1_completed.TopPopLinksPair<?, ?>) obj).first)
+                && equal(second, ((mp1_completed.TopPopLinksPair<?, ?>) obj).second);
     }
 
     private boolean equal(Object o1, Object o2) {
