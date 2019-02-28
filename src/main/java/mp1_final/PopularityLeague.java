@@ -218,32 +218,31 @@ public class PopularityLeague extends Configured implements Tool {
 			int lastLinkValue = 0;
 
 //			Map<Integer, Integer> linkToCountMap = new HashMap<Integer,Integer>();
-            Map<Integer, Integer> linkToCountMap = new TreeMap<>(Collections.reverseOrder());
-
-            for (TopPopLinksPair< Integer, Integer > item: countToWordMap) {
-                Integer word = item.second;
-                Integer value = item.first;
-                linkToCountMap.put(word, value);
-            }
+            Map<IntWritable, IntWritable> linkToCountMap = new TreeMap<>(Collections.reverseOrder());
 
 			int lastRank =0, lastValue =0;
 
-//			for (TopPopLinksPair< Integer, Integer > item: countToWordMap) {
-			for (Map.Entry<Integer, Integer> item: linkToCountMap.entrySet()) {
-				IntWritable word = new IntWritable(item.getKey());
-				IntWritable value = new IntWritable(item.getValue());
-				
+			for (TopPopLinksPair< Integer, Integer > item: countToWordMap) {
+				IntWritable word = new IntWritable(item.second);
+				IntWritable value = new IntWritable(item.first);
+
 				if(value.get()==lastValue){
-					context.write(word, new IntWritable(lastRank));
+//					context.write(word, new IntWritable(lastRank));
+                    linkToCountMap.put(word, new IntWritable(lastRank));
 				}else{
-					context.write(word, new IntWritable(rank));
+//					context.write(word, new IntWritable(rank));
+                    linkToCountMap.put(word, new IntWritable(rank));
 				}
-				
+
 				lastRank = rank;
 				lastValue = value.get();
-				
+
 				rank++;
 			}
+
+			for (Map.Entry<IntWritable, IntWritable> mapEntry : linkToCountMap.entrySet()){
+                context.write(mapEntry.getKey(), mapEntry.getValue());
+            }
 		}
     }
 }
