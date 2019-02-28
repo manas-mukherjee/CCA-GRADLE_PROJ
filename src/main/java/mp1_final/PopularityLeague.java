@@ -124,7 +124,7 @@ public class PopularityLeague extends Configured implements Tool {
         	
         	StringTokenizer tokenizer = new StringTokenizer(lineValue, " ");
         	
-        	context.write(new IntWritable(Integer.parseInt(lineKey)), new IntWritable(0));
+//        	context.write(new IntWritable(Integer.parseInt(lineKey)), new IntWritable(0));
 			while (tokenizer.hasMoreTokens()) {
 				String nextToken = tokenizer.nextToken().trim();
 				context.write(new IntWritable(Integer.parseInt(nextToken)), new IntWritable(1));
