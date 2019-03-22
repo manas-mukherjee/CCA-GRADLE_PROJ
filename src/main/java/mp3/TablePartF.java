@@ -27,16 +27,6 @@ public class TablePartF{
         // DON' CHANGE THE 'System.out.println(xxx)' OUTPUT PART
         // OR YOU WON'T RECEIVE POINTS FROM THE GRADER
 
-
-//        String name = ???;
-//        String power = ???;
-//        String color = ???;
-//
-//        String name1 = ???;
-//        String power1 = ???;
-//        String color1 = ???;
-//        System.out.println(name + ", " + power + ", " + name1 + ", " + power1 + ", "+color);
-
       // Instantiating Configuration class
       Configuration config = HBaseConfiguration.create();
 
@@ -60,10 +50,13 @@ public class TablePartF{
          String power = new String(result.getValue(Bytes.toBytes("personal"), Bytes.toBytes("power")));
          String color = new String(result.getValue(Bytes.toBytes("custom"), Bytes.toBytes("color")));
 
+//         System.out.println(new String(result.getRow()));
          ResultScanner scanner1 = table.getScanner(scan);
          for (Result result1 = scanner1.next(); result1 != null; result1 = scanner1.next()) {
+//            System.out.println(new String(result1.getRow()));
+
             String name1 = new String(result1.getValue(Bytes.toBytes("professional"), Bytes.toBytes("name")));
-            String power1 = new String(result.getValue(Bytes.toBytes("personal"), Bytes.toBytes("power")));
+            String power1 = new String(result1.getValue(Bytes.toBytes("personal"), Bytes.toBytes("power")));
             String color1 = new String(result1.getValue(Bytes.toBytes("custom"), Bytes.toBytes("color")));
 
             if (color.equals(color1) && !name.equals(name1))
