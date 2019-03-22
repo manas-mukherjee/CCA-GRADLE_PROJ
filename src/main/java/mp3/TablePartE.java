@@ -38,11 +38,11 @@ public class TablePartE{
         Scan scan = new Scan();
 
         // Scanning the required columns
-//        scan.addColumn(Bytes.toBytes("personal"), Bytes.toBytes("hero"));
+        scan.addColumn(Bytes.toBytes("personal"), Bytes.toBytes("hero"));
         scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("name"));
         scan.addColumn(Bytes.toBytes("personal"), Bytes.toBytes("power"));
         scan.addColumn(Bytes.toBytes("custom"), Bytes.toBytes("color"));
-//        scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("xp"));
+        scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("xp"));
 
         ResultScanner scanner = table.getScanner(scan);
         for (Result result = scanner.next(); result != null; result = scanner.next())

@@ -54,11 +54,29 @@ public class TablePartF{
       scan.addColumn(Bytes.toBytes("custom"), Bytes.toBytes("color"));
 
       ResultScanner scanner = table.getScanner(scan);
-      for (Result result = scanner.next(); result != null; result = scanner.next())
-         System.out.println(name + ", " + power + ", " + name1 + ", " + power1 + ", "+color);
+
+      for (Result result = scanner.next(); result != null; result = scanner.next()) {
+         String name = new String(result.getValue(Bytes.toBytes("professional"), Bytes.toBytes("name")));
+         String power = new String(result.getValue(Bytes.toBytes("personal"), Bytes.toBytes("power")));
+         String color = new String(result.getValue(Bytes.toBytes("custom"), Bytes.toBytes("color")));
+
+         ResultScanner scanner1 = table.getScanner(scan);
+         for (Result result1 = scanner1.next(); result1 != null; result1 = scanner1.next()) {
+            String name1 = new String(result1.getValue(Bytes.toBytes("professional"), Bytes.toBytes("name")));
+            String power1 = new String(result.getValue(Bytes.toBytes("personal"), Bytes.toBytes("power")));
+            String color1 = new String(result1.getValue(Bytes.toBytes("custom"), Bytes.toBytes("color")));
+
+            if (color.equals(color1) && !name.equals(name1))
+               System.out.println(name + ", " + power + ", " + name1 + ", " + power1 + ", "+color);
+         }
+         scanner1.close();
+      }
+
+      //
 
       //closing the scanner
       scanner.close();
+
 
    }
 }
